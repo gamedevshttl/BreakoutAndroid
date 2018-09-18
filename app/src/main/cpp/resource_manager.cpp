@@ -1,13 +1,8 @@
 
 #include "resource_manager.h"
 
-//#define STB_IMAGE_IMPLEMENTATION
-//#include "stb_image.h"
-
 #include <android/asset_manager_jni.h>
 
-//#include <sstream>
-//#include <fstream>
 #include <iostream>
 #include <vector>
 
@@ -19,16 +14,10 @@
 #include "pngconf.h"
 #include "assert.h"
 
-#include <android/asset_manager_jni.h>
-
-
-
 std::map<std::string, shader> resource_manager::m_shaders;
 std::map<std::string, texture> resource_manager::m_textures;
 std::string resource_manager::m_current_dir;
 AAssetManager* resource_manager::m_asset_manager;
-
-AAssetManager* local_asset_manager;
 
 void resource_manager::set_data_dir(std::string current_dir)
 {
@@ -38,7 +27,6 @@ void resource_manager::set_data_dir(std::string current_dir)
 void resource_manager::set_asset_manager(AAssetManager* asset_manager)
 {
     m_asset_manager = asset_manager;
-    local_asset_manager = asset_manager;
 }
 
 shader resource_manager::load_shader(const GLchar *v_shader_file, const GLchar *f_shader_file,
@@ -76,8 +64,6 @@ void resource_manager::clear()
 std::string resource_manager::load_file(const GLchar *file_path)
 {
     std::string file_content;
-
-//    AAssetManager* assetManager = m_asset_manager;
     AAsset* assetFile = AAssetManager_open(m_asset_manager, file_path, AASSET_MODE_STREAMING);
 
     uint8_t* data = (uint8_t*)AAsset_getBuffer(assetFile);
@@ -90,9 +76,6 @@ std::string resource_manager::load_file(const GLchar *file_path)
         buffer_ref.reserve(size);
         buffer_ref.assign(data, data + size);
         AAsset_close(assetFile);
-//        std::string str(buffer_ref.begin(), buffer_ref.end());
-//        file_content = str;
-
         file_content.assign(buffer_ref.begin(), buffer_ref.end());
     }
 
@@ -105,54 +88,6 @@ shader resource_manager::load_shader_from_file(const GLchar *v_shader_file,
 
     std::string vertex_code = load_file(v_shader_file);
     std::string fragment_code = load_file(f_shader_file);
-
-////    JNIEnv* env = AttachCurrentThread();
-////    jstring str_path = GetExternalFilesDirJString(env);
-//
-//    std::string v_shader_file_path(v_shader_file);
-//    std::string f_shader_file_path(f_shader_file);
-//
-////    v_shader_file_path = m_current_dir + v_shader_file_path;
-////    f_shader_file_path = m_current_dir + f_shader_file_path;
-//
-//    std::ifstream vertex_shader_file(v_shader_file_path.c_str());
-//    std::ifstream fragment_shader_file(f_shader_file_path.c_str());
-//
-//    bool res_exists = vertex_shader_file.good();
-//
-//    std::stringstream v_shader_stream, f_shader_stream;
-//
-//    v_shader_stream << vertex_shader_file.rdbuf();
-//    f_shader_stream << fragment_shader_file.rdbuf();
-//
-//    vertex_shader_file.close();
-//    fragment_shader_file.close();
-//
-//    vertex_code = v_shader_stream.str();
-//    fragment_code = f_shader_stream.str();
-
-
-
-    /*
-    AAssetManager* assetManager = m_asset_manager;
-    AAsset* assetFile = AAssetManager_open(assetManager, v_shader_file, AASSET_MODE_STREAMING);
-
-    uint8_t* data = (uint8_t*)AAsset_getBuffer(assetFile);
-    int32_t size = AAsset_getLength(assetFile);
-    if (data == NULL) {
-        AAsset_close(assetFile);
-    }
-    else{
-        std::vector<uint8_t> buffer_ref;
-        buffer_ref.reserve(size);
-        buffer_ref.assign(data, data + size);
-        AAsset_close(assetFile);
-        std::string str(buffer_ref.begin(), buffer_ref.end());
-        vertex_code = str;
-    }
-
-    */
-
 
     shader shader_value;
     shader_value.compile(vertex_code.c_str(), fragment_code.c_str());
@@ -212,7 +147,6 @@ static PngInfo read_and_update_info(const png_structp png_ptr, const png_infop i
 static DataHandle read_entire_png_image(const png_structp png_ptr, const png_infop info_ptr, const png_uint_32 height)
 {
     const png_size_t row_size = png_get_rowbytes(png_ptr, info_ptr);
-//    const int data_length = row_size * height;
     png_size_t data_length = row_size * height;
 
     assert(row_size > 0);
@@ -250,10 +184,8 @@ GLenum get_gl_color_format(const int png_color_format)
     return 0;
 }
 
-
 RawImageData get_raw_image_data_from_png(const void* png_data, const int png_data_size) {
     assert(png_data != NULL && png_data_size > 8);
-//    assert(png_check_sig((void*)png_data, 8));
 
     png_structp png_ptr = png_create_read_struct(
             PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
@@ -288,15 +220,15 @@ void release_raw_image_data(const RawImageData* data) {
     free((void*)data->data);
 }
 
-FileData get_asset_data(const char* relative_path) {
+FileData resource_manager::get_asset_data(const char* relative_path) {
     assert(relative_path != NULL);
-    AAsset* asset = AAssetManager_open(local_asset_manager, relative_path, AASSET_MODE_STREAMING);
+    AAsset* asset = AAssetManager_open(m_asset_manager, relative_path, AASSET_MODE_STREAMING);
     assert(asset != NULL);
 
     return (FileData) { AAsset_getLength(asset), AAsset_getBuffer(asset), asset };
 }
 
-void release_asset_data(const FileData* file_data) {
+void resource_manager::release_asset_data(const FileData* file_data) {
     assert(file_data != NULL);
     assert(file_data->file_handle != NULL);
     AAsset_close((AAsset*)file_data->file_handle);
@@ -310,24 +242,10 @@ texture resource_manager::load_texture_from_file(const GLchar *file, GLboolean a
         texture_value.m_image_format = GL_RGBA;
     }
 
-
     const FileData png_file = get_asset_data(file);
-    const RawImageData raw_image_data =
-            get_raw_image_data_from_png(png_file.data, png_file.data_length);
-//    const GLuint texture_object_id = load_texture(
-//            raw_image_data.width, raw_image_data.height,
-//            raw_image_data.gl_color_format, raw_image_data.data);
+    const RawImageData raw_image_data = get_raw_image_data_from_png(png_file.data, png_file.data_length);
 
     if (raw_image_data.data) {
-
-//        GLenum format;
-//        if (raw_image_data.gl_color_format == 1)
-//            texture_value.m_image_format = GL_RGB;
-//        else if (raw_image_data.gl_color_format == 3)
-//            texture_value.m_image_format = GL_RGB;
-//        else if (raw_image_data.gl_color_format == 4)
-//            texture_value.m_image_format = GL_RGBA;
-
         texture_value.m_image_format = raw_image_data.gl_color_format;
 
         texture_value.generate(raw_image_data.width, raw_image_data.height,
@@ -337,41 +255,5 @@ texture resource_manager::load_texture_from_file(const GLchar *file, GLboolean a
         release_asset_data(&png_file);
     }
 
-    return texture_value;
-
-//    return texture_object_id;
-
-
-//    (FileData) { AAsset_getLength(asset), AAsset_getBuffer(asset), asset }
-
-//    int width, height, nr_channels;
-
-//    std::string file_path = m_current_dir + "/" + std::string(file);
-
-//    unsigned char* image_original = stbi_load( file_path.c_str(), &width, &height, &nr_channels, 0);
-
-//    AAsset* assetFile = AAssetManager_open(m_asset_manager, file, AASSET_MODE_STREAMING);
-//    uint8_t* asset = (uint8_t*)AAsset_getBuffer(assetFile);
-//
-//    FILE * file_asset = (FILE*)AAsset_getBuffer(assetFile);
-
-//    unsigned char* image_original = stbi_load_from_file( file_asset, &width, &height, &nr_channels, 0);
-
-//    if (image) {
-//
-//        GLenum format;
-//        if (nr_channels == 1)
-//            texture_value.m_image_format = GL_RGB;
-//        else if (nr_channels == 3)
-//            texture_value.m_image_format = GL_RGB;
-//        else if (nr_channels == 4)
-//            texture_value.m_image_format = GL_RGBA;
-//
-//        texture_value.generate(width, height, image);
-//        stbi_image_free(image);
-//    }
-//    else {
-//        std::cout << "Failed load texture " << file << std::endl;
-//    }
     return texture_value;
 }
