@@ -13,13 +13,12 @@ texture::texture()
     , m_wrap_s(GL_REPEAT)
     , m_filter_min(GL_LINEAR)
     , m_filter_max(GL_LINEAR)
-{
-    glGenTextures(1, &m_id);
-}
-
+{}
 
 void texture::generate(GLuint width, GLuint height, unsigned char* data)
 {
+    glGenTextures(1, &m_id);
+    
     m_width = width;
     m_height = height;
 

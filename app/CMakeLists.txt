@@ -30,7 +30,13 @@ add_library( # Sets the name of the library.
              src/main/cpp/texture.h
              src/main/cpp/texture.cpp
              src/main/cpp/sprite_renderer.h
-             src/main/cpp/sprite_renderer.cpp)
+             src/main/cpp/sprite_renderer.cpp
+             src/main/cpp/game_object.h
+             src/main/cpp/game_object.cpp
+             src/main/cpp/game_level.h
+             src/main/cpp/game_level.cpp
+             src/main/cpp/linmath.h
+             )
 
 # Searches for a specified prebuilt library and stores the path as a
 # variable. Because CMake includes system libraries in the search path by
@@ -39,12 +45,13 @@ add_library( # Sets the name of the library.
 # completing its build.
 
 find_library( # Sets the name of the path variable.
-              log-lib
+              #log-lib
               android-lib
 
               # Specifies the name of the NDK library that
               # you want CMake to locate.
-              log )
+              log
+              )
 
 # Specifies libraries CMake should link to your target library. You
 # can link multiple libraries, such as libraries you define in this
@@ -55,9 +62,11 @@ target_link_libraries( # Specifies the target library.
 
                        # Links the target library to the log library
                        # included in the NDK.
-                       ${log-lib}
-                       ${android-lib}
+                       #${log-lib}
+                       -llog
+                       #${android-lib}
                        GLESv2
                        android
                        png
-                       z)
+                       z
+                       )

@@ -71,13 +71,15 @@ public:
 
     static void clear();
 
+    static std::string load_file(const GLchar *file_path);
+
 private:
     resource_manager(){}
 
     static FileData get_asset_data(const char* relative_path);
     static void release_asset_data(const FileData* file_data);
 
-    static std::string load_file(const GLchar *file_path);
+
     static shader load_shader_from_file(const GLchar *v_shader_file, const GLchar *f_shader_file);
     static texture load_texture_from_file(const GLchar* file, GLboolean aplha);
 
