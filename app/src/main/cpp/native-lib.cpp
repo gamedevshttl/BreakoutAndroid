@@ -39,15 +39,6 @@ Java_breakout_yellowball_com_newbreakout_RenderWrapper_on_1serface_1changed(JNIE
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_breakout_yellowball_com_newbreakout_RenderWrapper_on_1draw_1frame(JNIEnv *env,
-                                                                       jobject instance) {
-
-    // TODO
-    on_draw_frame();
-}
-
-extern "C"
-JNIEXPORT void JNICALL
 Java_breakout_yellowball_com_newbreakout_Breakout_init_1asset_1manager(JNIEnv *env,
                                                                        jobject instance,
                                                                        jobject assetManager) {
@@ -68,4 +59,40 @@ Java_breakout_yellowball_com_newbreakout_Breakout_on_1set_1data_1dir(JNIEnv *env
     // TODO
     set_data_dir(dir );
     env->ReleaseStringUTFChars(dir_, dir);
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_breakout_yellowball_com_newbreakout_Breakout_on_1touch_1press(JNIEnv *env, jobject instance,
+                                                                   jfloat normalizedX,
+                                                                   jfloat normalizedY, jint idx) {
+
+    // TODO
+    on_touch_press(normalizedX, normalizedY, idx);
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_breakout_yellowball_com_newbreakout_Breakout_on_1touch_1drag(JNIEnv *env, jobject instance,
+                                                                  jfloat normalizedX,
+                                                                  jfloat normalizedY, jint idx) {
+
+    // TODO
+    on_touch_drag(normalizedX, normalizedY, idx);
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_breakout_yellowball_com_newbreakout_Breakout_on_1touch_1release(JNIEnv *env, jobject instance,
+                                                                     jfloat normalizedX,
+                                                                     jfloat normalizedY, jint idx) {
+
+    // TODO
+    on_touch_release(normalizedX, normalizedY, idx);
+}extern "C"
+JNIEXPORT void JNICALL
+Java_breakout_yellowball_com_newbreakout_RenderWrapper_on_1update(JNIEnv *env, jobject instance) {
+
+    // TODO
+    on_update();
 }

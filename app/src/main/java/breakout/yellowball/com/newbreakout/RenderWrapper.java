@@ -23,12 +23,10 @@ public class RenderWrapper implements GLSurfaceView.Renderer{
 
     public void onDrawFrame(GL10 gl)
     {
-        on_draw_frame();
+        on_update();
     }
-
-
 
     public native void on_suface_createrd();
     public native void on_serface_changed(int width, int height);
-    public native void on_draw_frame();
+    public native void on_update();
 }

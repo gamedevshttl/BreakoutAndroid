@@ -6,6 +6,8 @@ import android.content.pm.ConfigurationInfo;
 import android.opengl.GLSurfaceView;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.MotionEvent;
+import android.view.View;
 import android.widget.TextView;
 
 import java.io.File;
@@ -49,6 +51,59 @@ public class Breakout extends AppCompatActivity {
             glSurfaceView.setRenderer(new RenderWrapper());
             rendererSet = true;
             setContentView(glSurfaceView);
+
+            glSurfaceView.setOnTouchListener(new View.OnTouchListener() {
+                @Override
+                public boolean onTouch(View v, MotionEvent event) {
+                    if(event != null) {
+
+                        final float normalizedX = (event.getX() / (float) v.getWidth()) * 2 - 1;
+                        final float normalizedY = -((event.getY() / (float) v.getHeight()) * 2 - 1);
+
+                        final int idx = event.getActionIndex();
+
+                        if(event.getAction() == MotionEvent.ACTION_DOWN){
+
+                            glSurfaceView.queueEvent(new Runnable() {
+                                @Override
+                                public void run() {
+                                    on_touch_press(normalizedX, normalizedY, idx);
+                                }
+                            });
+                        }
+                        else if(event.getAction() == MotionEvent.ACTION_POINTER_DOWN) {
+                            glSurfaceView.queueEvent(new Runnable() {
+                                @Override
+                                public void run() {
+                                    on_touch_press(normalizedX, normalizedY, idx);
+                                }
+                            });
+                        }
+                        else if(event.getAction() == MotionEvent.ACTION_MOVE){
+                            glSurfaceView.queueEvent(new Runnable() {
+                                @Override
+                                public void run() {
+                                    on_touch_drag(normalizedX, normalizedY, idx);
+                                }
+                            });
+                        }
+                        else if(event.getAction() == MotionEvent.ACTION_UP){
+                            glSurfaceView.queueEvent(new Runnable() {
+                                @Override
+                                public void run() {
+                                    on_touch_release(normalizedX, normalizedY, idx);
+                                }
+                            });
+                        }
+
+                        return true;
+                    }
+                    else {
+                        return false;
+                    }
+                }
+            });
+
         }
     }
 
@@ -76,4 +131,8 @@ public class Breakout extends AppCompatActivity {
     public native String stringFromJNI();
     public native void on_set_data_dir(String dir);
     public native void init_asset_manager(AssetManager assetManager);
+    public native void on_touch_press(float normalizedX, float normalizedY, int idx);
+    public native void on_touch_drag(float normalizedX, float normalizedY, int idx);
+    public native void on_touch_release(float normalizedX, float normalizedY, int idx);
+
 }
