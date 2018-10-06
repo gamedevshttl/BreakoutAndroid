@@ -91,3 +91,9 @@ void game_level::init(const std::vector<std::vector<GLuint>>& tile_data, GLuint 
 		}
 	}
 }
+
+void game_level::reset()
+{
+	for (auto& brick : m_briks)
+		brick.m_destroyed = false;
+}

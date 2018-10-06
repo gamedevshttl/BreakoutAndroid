@@ -13,6 +13,7 @@ public:
 	void load(const GLchar* file, GLuint level_width, GLuint level_height);
 	void draw(sprite_renderer& renderer);
 	GLboolean is_completed();
+	void reset();
 	
 	std::vector<game_object> m_briks;
 
