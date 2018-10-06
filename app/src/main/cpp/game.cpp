@@ -91,6 +91,9 @@ void game::init()
 
     resource_manager::get_shader("sprite").use().set_matrix4f("projection", projection);
     resource_manager::get_shader("sprite").use().set_int("image", 0);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
 void game::set_asset_manager(AAssetManager* asset_manager)
