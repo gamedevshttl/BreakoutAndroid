@@ -5,6 +5,7 @@
 #include "shader.h"
 
 #include <iostream>
+#include <android/log.h>
 
 //shader::shader()
 //{
@@ -41,6 +42,22 @@ void shader::set_vector3f(const GLchar* name, const vec3& value, GLboolean use_s
     glUniform3f(glGetUniformLocation(m_id, name), value[0], value[1], value[2]);
 }
 
+void shader::set_vector2f(const GLchar* name, const vec2& value, GLboolean use_shader)
+{
+    if(use_shader)
+        use();
+
+    glUniform2f(glGetUniformLocation(m_id, name), value[0], value[1]);
+}
+
+void shader::set_vector4f(const GLchar* name, const vec4& value, GLboolean use_shader)
+{
+    if(use_shader)
+        use();
+
+    glUniform4f(glGetUniformLocation(m_id, name), value[0], value[1], value[2], value[3]);
+}
+
 void shader::compile(const GLchar* vertex_source,  const GLchar* fragment_source, const GLchar* geometry_source)
 {
     GLuint  s_vertex, s_fragment, s_geometry;
@@ -53,7 +70,7 @@ void shader::compile(const GLchar* vertex_source,  const GLchar* fragment_source
     s_fragment = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(s_fragment, 1, &fragment_source, NULL);
     glCompileShader(s_fragment);
-    check_compile_error(s_fragment, "vertex");
+    check_compile_error(s_fragment, "fragment");
 
 //    if (geometry_source) {
 //        s_geometry = glCreateShader();
@@ -63,6 +80,7 @@ void shader::compile(const GLchar* vertex_source,  const GLchar* fragment_source
 //    }
 
     m_id = glCreateProgram();
+
     glAttachShader(m_id, s_vertex);
     glAttachShader(m_id, s_fragment);
     glLinkProgram(m_id);
@@ -82,6 +100,7 @@ void shader::check_compile_error(GLuint object, const std::string& type)
         if(!success) {
             glGetShaderInfoLog(object, 1024, NULL, info_log);
             std::cout<<type <<": "<<info_log;
+            __android_log_print(ANDROID_LOG_INFO, "Breakout load shader", "type = %s, %s ",type.c_str(),  info_log);
         }
     }
     else{
@@ -89,6 +108,7 @@ void shader::check_compile_error(GLuint object, const std::string& type)
         if(!success){
             glGetProgramInfoLog(object, 1024, NULL, info_log);
             std::cout<<type <<": "<<info_log;
+            __android_log_print(ANDROID_LOG_INFO, "Breakout load shader", "type = %s, %s ",type.c_str(),  info_log);
         }
     }
 }

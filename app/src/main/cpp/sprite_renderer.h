@@ -13,7 +13,7 @@ class sprite_renderer
 public:
 //    sprite_renderer(shader& shader_item);
 
-    sprite_renderer(shader shader);
+    sprite_renderer(shader _shader);
 
     void draw_sprite(texture& texture_item, vec2 position, vec2 size, const vec3& color);
 private:

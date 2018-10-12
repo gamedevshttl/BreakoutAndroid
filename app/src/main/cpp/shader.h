@@ -22,6 +22,8 @@ public:
     void set_matrix4f(const GLchar* name, const mat4x4& matrix, GLboolean use_shader = false);
     void set_int(const GLchar* name, GLuint value, GLboolean use_shader = false);
     void set_vector3f(const GLchar* name, const vec3& value, GLboolean use_shader = false);
+    void set_vector2f(const GLchar* name, const vec2& value, GLboolean use_shader = false);
+    void set_vector4f(const GLchar* name, const vec4& value, GLboolean use_shader = false);
 private:
     void check_compile_error(GLuint object, const std::string& type);
 

@@ -8,11 +8,13 @@
 #include <memory>
 #include <chrono>
 #include <cmath>
+#include <android/log.h>
 
 #include "resource_manager.h"
 #include "sprite_renderer.h"
 #include "game_level.h"
 #include "linmath.h"
+#include "particle_generator.h"
 
 std::chrono::time_point<std::chrono::system_clock> last_frame;
 game m_game;
@@ -82,15 +84,23 @@ void game::init()
     resource_manager::load_texture("textures/block.png", GL_TRUE, "block");
     resource_manager::load_texture("textures/block_solid.png", GL_TRUE, "block_solid");
     resource_manager::load_texture("textures/paddle.png", GL_TRUE, "paddle");
+    resource_manager::load_texture("textures/particle.png", GL_TRUE, "particle");
 
+    resource_manager::load_shader("shaders/particle.vs", "shaders/particle.fs", "particle");
     resource_manager::load_shader("shaders/sprite.vs", "shaders/sprite.fs", "sprite");
 
     m_sprite_renderer = std::make_shared<sprite_renderer>(resource_manager::get_shader("sprite"));
 
+
+
     mat4x4_ortho(projection, 0, m_width, m_height, 0, -1.0f, 1.0f);
 
-    resource_manager::get_shader("sprite").use().set_matrix4f("projection", projection);
     resource_manager::get_shader("sprite").use().set_int("image", 0);
+    resource_manager::get_shader("particle").use().set_int("image", 0);
+
+    m_particle_generator = std::make_shared<particle_generator>(resource_manager::get_shader("particle"),
+                                                                resource_manager::get_texture("particle"),
+                                                                500);
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -115,6 +125,7 @@ void game::on_surface_changed(int width, int height)
     mat4x4_ortho(projection, 0, m_width, m_height, 0, -1.0f, 1.0f);
 
     resource_manager::get_shader("sprite").use().set_matrix4f("projection", projection);
+    resource_manager::get_shader("particle").use().set_matrix4f("projection", projection);
 
     game_level one;
     one.load("data/level_one.lvl", m_width, m_height * 0.3);
@@ -134,8 +145,12 @@ void game::on_surface_changed(int width, int height)
 
 void game::update(GLfloat dt)
 {
+    if(m_ball == nullptr)
+        return;
+
     m_ball->move(dt, m_width);
     do_collision();
+    m_particle_generator->update(dt, *m_ball, 2, vec2{m_ball->m_radius/2});
 
     GLfloat velocity = m_player_velocity * dt;
     if(m_action == left){
@@ -170,6 +185,7 @@ void game::render()
         m_levels[m_current_level].draw(*m_sprite_renderer);
 
     m_player->draw(*m_sprite_renderer);
+    m_particle_generator->draw(*m_sprite_renderer);
     m_ball->draw(*m_sprite_renderer);
 }
 

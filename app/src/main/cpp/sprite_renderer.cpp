@@ -12,8 +12,8 @@
 //    init_render_data();
 //}
 
-sprite_renderer::sprite_renderer(shader shader) {
-    m_shader_item = shader;
+sprite_renderer::sprite_renderer(shader _shader) {
+    m_shader_item = _shader;
     init_render_data();
 }
 
@@ -55,7 +55,7 @@ void sprite_renderer::init_render_data()
     };
 
     gvPositionHandle = glGetAttribLocation(m_shader_item.get_id(), "vPosition");
-    __android_log_print(ANDROID_LOG_INFO, "AirHockey", "glGetAttribLocation(\"vPosition\") = %d\n",
+    __android_log_print(ANDROID_LOG_INFO, "Breakout", "glGetAttribLocation(\"vPosition\") = %d\n",
                         gvPositionHandle);
 
     glGenBuffers(1, &m_VBO);

@@ -16,6 +16,8 @@
 #include "game_level.h"
 #include "ball_object.h"
 
+class particle_generator;
+
 void on_surface_created();
 void on_surface_changed(int width, int height);
 void on_update();
@@ -91,6 +93,8 @@ public:
     std::shared_ptr<ball_object> m_ball;
     GLfloat m_ball_radius;
     vec2 m_ball_velocity;
+
+    std::shared_ptr<particle_generator> m_particle_generator;
 };
 
 
