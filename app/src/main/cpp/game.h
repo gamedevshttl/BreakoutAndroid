@@ -17,6 +17,7 @@
 #include "ball_object.h"
 
 class particle_generator;
+class post_processor;
 
 void on_surface_created();
 void on_surface_changed(int width, int height);
@@ -95,6 +96,8 @@ public:
     vec2 m_ball_velocity;
 
     std::shared_ptr<particle_generator> m_particle_generator;
+    std::shared_ptr<post_processor> m_post_processor;
+    GLfloat m_shake_time;
 };
 
 

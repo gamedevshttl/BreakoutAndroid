@@ -20,6 +20,7 @@ public:
     GLuint get_id(){return m_id;}
 
     void set_matrix4f(const GLchar* name, const mat4x4& matrix, GLboolean use_shader = false);
+    void set_float(const GLchar* name, GLfloat value, GLboolean use_shader = false);
     void set_int(const GLchar* name, GLuint value, GLboolean use_shader = false);
     void set_vector3f(const GLchar* name, const vec3& value, GLboolean use_shader = false);
     void set_vector2f(const GLchar* name, const vec2& value, GLboolean use_shader = false);

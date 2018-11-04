@@ -15,6 +15,12 @@ particle_generator::particle_generator(shader _shader, texture _texture, GLuint 
 
 void particle_generator::update(GLfloat dt, const game_object &object, GLuint new_particle, vec2 offset)
 {
+    if (dt < 0)
+        return;
+
+    if (dt > 10)
+        return;
+
 	for (GLuint i = 0; i < new_particle; ++i) {
 		int unused_particle = first_unsed_particle();
         if(unused_particle<m_particles.size())
@@ -52,6 +58,7 @@ void particle_generator::draw(sprite_renderer& renderer)
 
 			glDrawArrays(GL_TRIANGLES, 0, 6);
             glBindBuffer(GL_ARRAY_BUFFER, 0);
+			glBindTexture(GL_TEXTURE_2D, 0);
 		}
 	}
 

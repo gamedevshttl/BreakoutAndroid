@@ -40,6 +40,8 @@ add_library( # Sets the name of the library.
              src/main/cpp/ball_object.cpp
              src/main/cpp/particle_generator.h
              src/main/cpp/particle_generator.cpp
+             src/main/cpp/post_processor.h
+             src/main/cpp/post_processor.cpp
              )
 
 # Searches for a specified prebuilt library and stores the path as a

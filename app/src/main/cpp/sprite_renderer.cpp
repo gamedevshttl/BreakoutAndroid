@@ -39,6 +39,7 @@ void sprite_renderer::draw_sprite(texture& texture_item, vec2 position, vec2 siz
 
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindBuffer(GL_ARRAY_BUFFER,0);
+    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 void sprite_renderer::init_render_data()

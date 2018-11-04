@@ -26,6 +26,14 @@ void shader::set_matrix4f(const GLchar* name, const mat4x4& matrix, GLboolean us
     glUniformMatrix4fv(glGetUniformLocation(m_id, name), 1, GL_FALSE, (GLfloat*)matrix);
 }
 
+void shader::set_float(const GLchar* name, GLfloat value, GLboolean use_shader)
+{
+    if (use_shader)
+        use();
+    glUniform1f(glGetUniformLocation(m_id, name), value);
+}
+
+
 void shader::set_int(const GLchar* name, GLuint value, GLboolean use_shader)
 {
     if(use_shader)

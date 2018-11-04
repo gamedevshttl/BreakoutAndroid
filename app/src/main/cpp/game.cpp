@@ -15,6 +15,7 @@
 #include "game_level.h"
 #include "linmath.h"
 #include "particle_generator.h"
+#include "post_processor.h"
 
 std::chrono::time_point<std::chrono::system_clock> last_frame;
 game m_game;
@@ -70,6 +71,7 @@ game::game()
     : m_player_velocity(PLAYER_VELOCITY)
     , m_action(none)
     , m_ball_radius(BALL_RADIUS)
+    , m_shake_time(0)
 {
     std::copy(INITIAL_BALL_VELOCITY.begin(), INITIAL_BALL_VELOCITY.end(), m_ball_velocity);
 }
@@ -88,10 +90,9 @@ void game::init()
 
     resource_manager::load_shader("shaders/particle.vs", "shaders/particle.fs", "particle");
     resource_manager::load_shader("shaders/sprite.vs", "shaders/sprite.fs", "sprite");
+    resource_manager::load_shader("shaders/post_processor.vs", "shaders/post_processor.fs", "postprocessing");
 
     m_sprite_renderer = std::make_shared<sprite_renderer>(resource_manager::get_shader("sprite"));
-
-
 
     mat4x4_ortho(projection, 0, m_width, m_height, 0, -1.0f, 1.0f);
 
@@ -141,6 +142,8 @@ void game::on_surface_changed(int width, int height)
 
     vec2 ball_pos{player_pos[0] + m_player_size[0]/2 - m_ball_radius/2, player_pos[1] -m_ball_radius*2};
     m_ball = std::make_shared<ball_object>(ball_pos, m_ball_radius, m_ball_velocity, resource_manager::get_texture("fase"));
+
+    m_post_processor = std::make_shared<post_processor>(resource_manager::get_shader("postprocessing"), m_width, m_height);
 }
 
 void game::update(GLfloat dt)
@@ -175,18 +178,42 @@ void game::update(GLfloat dt)
         reset_player();
         m_action = none;
     }
+
+    if (m_shake_time > 0.0f) {
+        m_shake_time -= dt;
+        if (m_shake_time < 0.0f)
+            m_post_processor->m_shake = GL_FALSE;
+    }
 }
 
 void game::render()
 {
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
-    if (m_levels.size() > m_current_level)
-        m_levels[m_current_level].draw(*m_sprite_renderer);
+    m_post_processor->begin_render();
 
-    m_player->draw(*m_sprite_renderer);
-    m_particle_generator->draw(*m_sprite_renderer);
-    m_ball->draw(*m_sprite_renderer);
+    {
+        if (m_levels.size() > m_current_level)
+            m_levels[m_current_level].draw(*m_sprite_renderer);
+
+
+        m_player->draw(*m_sprite_renderer);
+        m_particle_generator->draw(*m_sprite_renderer);
+        m_ball->draw(*m_sprite_renderer);
+    }
+
+    m_post_processor->end_render();
+
+    std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+    std::chrono::system_clock::duration tp = now.time_since_epoch();
+    std::chrono::seconds s = std::chrono::duration_cast<std::chrono::seconds>(tp);
+    std::chrono::hours h = std::chrono::duration_cast<std::chrono::hours>(tp);
+
+    std::chrono::seconds diff_s = s - h;
+
+    m_post_processor->render(diff_s.count());
+
+
 }
 
 float max(float x, float y)
@@ -269,8 +296,12 @@ void game::do_collision()
             Collision collision = check_collision(*m_ball, box);
 
             if(std::get<0>(collision)) {
-                if (!box.m_solid)
+                if (!box.m_solid){
                     box.m_destroyed = true;
+//               } else{
+                    m_shake_time = 0.1;
+                    m_post_processor->m_shake = GL_TRUE;
+                }
 
                 Direction dir = std::get<1>(collision);
                 std::array<float,2> diff_vector = std::get<2>(collision);
