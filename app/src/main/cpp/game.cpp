@@ -129,7 +129,7 @@ void game::on_surface_changed(int width, int height)
     resource_manager::get_shader("particle").use().set_matrix4f("projection", projection);
 
     game_level one;
-    one.load("data/level_one.lvl", m_width, m_height * 0.3);
+    one.load("data/level_one.json", m_width, m_height * 0.3);
     m_levels.push_back(one);
 
     m_player_size = glm::vec2(width / 8, height / 30);

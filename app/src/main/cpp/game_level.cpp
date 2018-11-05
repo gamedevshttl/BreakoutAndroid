@@ -10,6 +10,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include "rapidjson/document.h"
+
 game_level::game_level()
 {}
 
@@ -18,23 +20,34 @@ void game_level::load(const GLchar* file, GLuint level_width, GLuint level_heigh
 	std::string file_content = resource_manager::load_file(file);
 
 	std::stringstream ss(file_content.c_str());
-	std::string line;
-    GLuint tile_code;
+    rapidjson::Document document;
+    document.Parse(file_content.c_str());
+
+    assert(document.IsObject());
+
+    const rapidjson::Value& object_array = document["level"];
+    assert(object_array.IsArray());
 
     std::vector<std::vector<GLuint>> tile_data;
+    for (rapidjson::SizeType i = 0; i < object_array.Size(); ++i) {
 
-	while(std::getline(ss,line,'\n')){
+        std::ostringstream os ;
+        os << i ;
+        std::string key = "line" + os.str();//std::to_string(i);
+        if (object_array[i].HasMember(key.c_str())){
+            const rapidjson::Value& vector_item = object_array[i][key.c_str()];
+            assert(vector_item.IsArray());
 
+            std::vector<GLuint> block_line;
+            for (rapidjson::SizeType j = 0; j < vector_item.Size(); ++j) {
+                GLuint block_type = vector_item[j].GetUint();
+                block_line.emplace_back(block_type);
+            }
+            tile_data.emplace_back(block_line);
+        }
+    }
 
-        std::istringstream sstream(line);
-        std::vector<GLuint> row;
-        while(sstream >> tile_code)
-            row.push_back(tile_code);
-        tile_data.push_back(row);
-	}
-
-    if(tile_data.size() > 0)
-        init(tile_data, level_width, level_height);
+    init(tile_data, level_width, level_height);
 }
 
 void game_level::draw(sprite_renderer& renderer)

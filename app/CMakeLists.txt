@@ -11,10 +11,12 @@ cmake_minimum_required(VERSION 3.4.1)
 # Gradle automatically packages shared libraries with your APK.
 
 include_directories(libs/libpng/jni
-                    libs/glm-0.9.8.5)
+                    libs/glm-0.9.8.5
+                    libs/rapidjson/include)
 
 add_subdirectory(libs/libpng)
 add_subdirectory(libs/glm-0.9.8.5)
+add_subdirectory(libs/rapidjson)
 
 add_library( # Sets the name of the library.
              native-lib
