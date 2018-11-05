@@ -18,6 +18,7 @@
 #include "sprite_renderer.h"
 #include "game_level.h"
 #include "ball_object.h"
+#include "reward.h"
 
 class particle_generator;
 class post_processor;
@@ -74,6 +75,9 @@ public:
     void do_collision();
     void reset_level();
     void reset_player();
+    void spawn_rewards(const glm::vec2& position, GLuint index);
+    void update_reward(GLfloat dt);
+    void activate_reward(const reward& reward_item);
 
     void on_touch_press(float x, float y, int idx);
     void on_touch_drag(float x, float y, int idx);
@@ -101,6 +105,8 @@ public:
     std::shared_ptr<particle_generator> m_particle_generator;
     std::shared_ptr<post_processor> m_post_processor;
     GLfloat m_shake_time;
+
+    std::vector<reward> m_rewards;
 };
 
 

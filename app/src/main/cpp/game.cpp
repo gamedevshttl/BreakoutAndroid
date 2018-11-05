@@ -9,6 +9,7 @@
 #include <chrono>
 #include <cmath>
 #include <android/log.h>
+#include <algorithm>
 
 #include "resource_manager.h"
 #include "sprite_renderer.h"
@@ -128,6 +129,8 @@ void game::on_surface_changed(int width, int height)
     resource_manager::get_shader("sprite").use().set_matrix4f("projection", projection);
     resource_manager::get_shader("particle").use().set_matrix4f("projection", projection);
 
+    reward_manager::init();
+
     game_level one;
     one.load("data/level_one.json", m_width, m_height * 0.3);
     m_levels.push_back(one);
@@ -181,6 +184,8 @@ void game::update(GLfloat dt)
         if (m_shake_time < 0.0f)
             m_post_processor->m_shake = GL_FALSE;
     }
+
+    update_reward(dt);
 }
 
 void game::render()
@@ -193,8 +198,13 @@ void game::render()
         if (m_levels.size() > m_current_level)
             m_levels[m_current_level].draw(*m_sprite_renderer);
 
-
         m_player->draw(*m_sprite_renderer);
+
+        for (auto& reward_item : m_rewards) {
+            if (!reward_item.m_destroyed)
+                reward_item.draw(*m_sprite_renderer);
+        }
+
         m_particle_generator->draw(*m_sprite_renderer);
         m_ball->draw(*m_sprite_renderer);
     }
@@ -209,8 +219,6 @@ void game::render()
     std::chrono::seconds diff_s = s - h;
 
     m_post_processor->render(diff_s.count());
-
-
 }
 
 float max(float x, float y)
@@ -251,6 +259,17 @@ Direction vector_direction(glm::vec2 target)
     return (Direction)best_match;
 }
 
+GLboolean check_collision(const game_object& lhs, const game_object& rhs)
+{
+    bool collision_x = lhs.m_position.x + lhs.m_size.x >= rhs.m_position.x &&
+                       rhs.m_position.x + rhs.m_size.x >= lhs.m_position.x;
+
+    bool collision_y = lhs.m_position.y + lhs.m_size.y >= rhs.m_position.y &&
+                       rhs.m_position.y + rhs.m_size.y >= lhs.m_position.y;
+
+    return collision_x && collision_y;
+}
+
 Collision check_collision(const ball_object& lhs, const game_object& rhs)
 {
     glm::vec2 center(lhs.m_position + lhs.m_radius);
@@ -272,12 +291,13 @@ Collision check_collision(const ball_object& lhs, const game_object& rhs)
 
 void game::do_collision()
 {
-    for (game_object& box : m_levels[m_current_level].m_briks) {
+    for (brick_object& box : m_levels[m_current_level].m_briks) {
         if (!box.m_destroyed) {
             Collision collision = check_collision(*m_ball, box);
             if(std::get<0>(collision)){
                 if (!box.m_solid) {
                     box.m_destroyed = true;
+                    spawn_rewards(box.m_position, box.m_index);
                 }
                 else {
                     m_shake_time = 0.1;
@@ -287,25 +307,39 @@ void game::do_collision()
                 Direction dir = std::get<1>(collision);
                 glm::vec2 diff_vector = std::get<2>(collision);
 
-                if (dir == LEFT || dir == RIGHT) {
-                    m_ball->m_velocity.x = -m_ball->m_velocity.x;
+                if (!(m_ball->m_pass_through && !box.m_solid)) {
+                    if (dir == LEFT || dir == RIGHT) {
+                        m_ball->m_velocity.x = -m_ball->m_velocity.x;
 
-                    GLfloat penetration = m_ball->m_radius - std::abs(diff_vector.x);
-                    if (dir == LEFT)
-                        m_ball->m_position.x += penetration;
-                    else if (dir == RIGHT)
-                        m_ball->m_position.x -= penetration;
+                        GLfloat penetration = m_ball->m_radius - std::abs(diff_vector.x);
+                        if (dir == LEFT)
+                            m_ball->m_position.x += penetration;
+                        else if (dir == RIGHT)
+                            m_ball->m_position.x -= penetration;
+                    } else if (dir == UP || dir == DOWN) {
+                        m_ball->m_velocity.y = -m_ball->m_velocity.y;
+
+                        GLfloat penetration = m_ball->m_radius - std::abs(diff_vector.y);
+                        if (dir == UP)
+                            m_ball->m_position.y -= penetration;
+                        else if (dir == DOWN)
+                            m_ball->m_position.y += penetration;
+                    }
                 }
-                else if (dir == UP || dir == DOWN) {
-                    m_ball->m_velocity.y = -m_ball->m_velocity.y;
+            }
+        }
+    }
 
-                    GLfloat penetration = m_ball->m_radius - std::abs(diff_vector.y);
-                    if (dir == UP)
-                        m_ball->m_position.y -= penetration;
-                    else if (dir == DOWN)
-                        m_ball->m_position.y += penetration;
-                }
+    for (auto& reward_item : m_rewards) {
+        if (!reward_item.m_destroyed) {
 
+            if (reward_item.m_position.y >= m_height)
+                reward_item.m_destroyed = GL_TRUE;
+
+            if (check_collision(*m_player, reward_item)) {
+                activate_reward(reward_item);
+                reward_item.m_destroyed = GL_TRUE;
+                reward_item.m_activated = GL_TRUE;
             }
         }
     }
@@ -321,6 +355,8 @@ void game::do_collision()
         m_ball->m_velocity.x = INITIAL_BALL_VELOCITY.x * percentage * strenght;
         m_ball->m_velocity = glm::normalize(m_ball->m_velocity) * glm::length(old_velosity);
         m_ball->m_velocity.y = -1 * std::abs(m_ball->m_velocity.y);
+
+        m_ball->m_stuck = m_ball->m_sticky;
     }
 }
 
@@ -334,6 +370,103 @@ void game::reset_player()
     m_player->m_size = m_player_size;
     m_player->m_position = glm::vec2(m_width/2 - m_player->m_size.x/2, m_height - m_player->m_size.y);
     m_ball->reset(m_player->m_position + glm::vec2(m_player->m_size.x/2 - m_ball->m_radius/2, -m_ball_radius * 2), INITIAL_BALL_VELOCITY);
+    m_ball->m_color = glm::vec3(1.0f);
+    m_player->m_color = glm::vec3(1.0f);
+    m_post_processor->m_chaos = GL_FALSE;
+    m_post_processor->m_confise = GL_FALSE;
+    m_ball->m_pass_through = GL_FALSE;
+}
+
+void game::spawn_rewards(const glm::vec2& position, GLuint index)
+{
+    std::string reward_type = m_levels[m_current_level].get_reward(index);
+
+    if (!reward_type.empty())
+        m_rewards.push_back(reward(reward_type,
+                                   reward_manager::get_color(reward_type),
+                                   reward_manager::get_duration(reward_type),
+                                   position,
+                                   glm::vec2(m_width / 8, m_height / 30),
+                                   reward_manager::get_texture(reward_type),
+                                   glm::vec2(0.0f, 150.0f)));
+}
+
+GLboolean is_other_reward_active(std::vector<reward> rewards, const std::string type)
+{
+    for (const auto& reward_item : rewards)
+        if (reward_item.m_type == type && reward_item.m_activated)
+            return GL_TRUE;
+    return GL_FALSE;
+}
+
+void game::update_reward(GLfloat dt)
+{
+    for (auto& reward_item : m_rewards) {
+        reward_item.m_position += reward_item.m_velocity * dt;
+
+        if (reward_item.m_activated) {
+            reward_item.m_duration -= dt;
+
+            if (reward_item.m_duration <= 0.0) {
+                reward_item.m_activated = GL_FALSE;
+
+                if (reward_item.m_type == "sticky") {
+                    if (!is_other_reward_active(m_rewards, "sticky")) {
+                        m_ball->m_sticky = GL_FALSE;
+                        m_player->m_color = glm::vec3(1.0f);
+                    }
+                }
+                else if(reward_item.m_type == "pass-through") {
+                    if (!is_other_reward_active(m_rewards, "pass-through")) {
+                        m_ball->m_pass_through = GL_FALSE;
+                        m_player->m_color = glm::vec3(1.0f);
+                        m_ball->m_color = glm::vec3(1.0f);
+                    }
+                }
+                else if(reward_item.m_type == "confuse") {
+                    if (!is_other_reward_active(m_rewards, "confuse")) {
+                        m_post_processor->m_confise = GL_FALSE;
+                    }
+                }
+                else if(reward_item.m_type == "chaos") {
+                    if (!is_other_reward_active(m_rewards, "chaos")) {
+                        m_post_processor->m_chaos = GL_FALSE;
+                    }
+                }
+            }
+        }
+    }
+
+    m_rewards.erase(
+            std::remove_if(m_rewards.begin(), m_rewards.end(), [](const reward& reward_item)
+            { return reward_item.m_destroyed && !reward_item.m_activated; }),
+            m_rewards.end());
+}
+
+void game::activate_reward(const reward& reward_item)
+{
+    if (reward_item.m_type == "speed") {
+        m_ball->m_velocity *= 1.2;
+    }
+    else if (reward_item.m_type == "sticky") {
+        m_ball->m_sticky = GL_TRUE;
+        m_player->m_color = glm::vec3(1.0f, 0.5f, 1.0f);
+    }
+    else if (reward_item.m_type == "pass-through") {
+        m_ball->m_pass_through = GL_TRUE;
+        m_ball->m_color = glm::vec3(1.0f, 0.5f, 0.5f);
+    }
+    else if (reward_item.m_type == "pad-size-increase") {
+        m_player->m_size.x += 50;
+    }
+    else if (reward_item.m_type == "confuse") {
+        if (!m_post_processor->m_chaos)
+            m_post_processor->m_confise = GL_TRUE;
+    }
+    else if (reward_item.m_type == "chaos") {
+        if (!m_post_processor->m_confise)
+            m_post_processor->m_chaos = GL_TRUE;
+    }
 }
 
 void game::on_touch_press(float x, float y, int idx)
