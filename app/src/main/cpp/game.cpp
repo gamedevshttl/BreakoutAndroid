@@ -13,9 +13,10 @@
 #include "resource_manager.h"
 #include "sprite_renderer.h"
 #include "game_level.h"
-#include "linmath.h"
 #include "particle_generator.h"
 #include "post_processor.h"
+
+
 
 std::chrono::time_point<std::chrono::system_clock> last_frame;
 game m_game;
@@ -72,8 +73,8 @@ game::game()
     , m_action(none)
     , m_ball_radius(BALL_RADIUS)
     , m_shake_time(0)
+    , m_ball_velocity(INITIAL_BALL_VELOCITY)
 {
-    std::copy(INITIAL_BALL_VELOCITY.begin(), INITIAL_BALL_VELOCITY.end(), m_ball_velocity);
 }
 
 
@@ -93,8 +94,6 @@ void game::init()
     resource_manager::load_shader("shaders/post_processor.vs", "shaders/post_processor.fs", "postprocessing");
 
     m_sprite_renderer = std::make_shared<sprite_renderer>(resource_manager::get_shader("sprite"));
-
-    mat4x4_ortho(projection, 0, m_width, m_height, 0, -1.0f, 1.0f);
 
     resource_manager::get_shader("sprite").use().set_int("image", 0);
     resource_manager::get_shader("particle").use().set_int("image", 0);
@@ -123,24 +122,22 @@ void game::on_surface_changed(int width, int height)
 
     m_width = width, m_height = height;
 
-    mat4x4_ortho(projection, 0, m_width, m_height, 0, -1.0f, 1.0f);
+    projection = glm::ortho(0.0f, static_cast<GLfloat>(m_width), static_cast<GLfloat>(m_height), 0.0f, -1.0f, 1.0f);
 
+    resource_manager::get_shader("sprite").use().set_matrix4f("projection", projection);
     resource_manager::get_shader("sprite").use().set_matrix4f("projection", projection);
     resource_manager::get_shader("particle").use().set_matrix4f("projection", projection);
 
     game_level one;
     one.load("data/level_one.lvl", m_width, m_height * 0.3);
-
-    m_player_size[0] = m_width / 8;
-    m_player_size[1] = m_height / 30;
-
-    vec2 player_pos{m_width/2 - m_player_size[0]/2, m_height - m_player_size[1]};
-
-    m_player = std::make_shared<game_object>(player_pos, m_player_size, resource_manager::get_texture("paddle"));
-
     m_levels.push_back(one);
 
-    vec2 ball_pos{player_pos[0] + m_player_size[0]/2 - m_ball_radius/2, player_pos[1] -m_ball_radius*2};
+    m_player_size = glm::vec2(width / 8, height / 30);
+
+    glm::vec2 player_pos = glm::vec2(m_width/2 - m_player_size.x/2, m_height - m_player_size.y);
+    m_player = std::make_shared<game_object>(player_pos, m_player_size, resource_manager::get_texture("paddle"));
+
+    glm::vec2 ball_pos = player_pos + glm::vec2(m_player_size.x / 2 - m_ball_radius / 2, -m_ball_radius * 2);
     m_ball = std::make_shared<ball_object>(ball_pos, m_ball_radius, m_ball_velocity, resource_manager::get_texture("fase"));
 
     m_post_processor = std::make_shared<post_processor>(resource_manager::get_shader("postprocessing"), m_width, m_height);
@@ -153,7 +150,7 @@ void game::update(GLfloat dt)
 
     m_ball->move(dt, m_width);
     do_collision();
-    m_particle_generator->update(dt, *m_ball, 2, vec2{m_ball->m_radius/2});
+    m_particle_generator->update(dt, *m_ball, 2, glm::vec2(m_ball->m_radius/2));
 
     GLfloat velocity = m_player_velocity * dt;
     if(m_action == left){
@@ -232,24 +229,20 @@ float min(float x, float y)
         return y;
 }
 
-Direction vector_direction(vec2 target)
+Direction vector_direction(glm::vec2 target)
 {
-    vec2 compass[] = {
-            {0.0f, 1.0f},
-            {1.0f, 0.0f},
-            {0.0f, -1.0f},
-            {-1.0f, 0.0f},
+    glm::vec2 compass[] = {
+            glm::vec2(0.0f, 1.0f),
+            glm::vec2(1.0f, 0.0f),
+            glm::vec2(0.0f, -1.0f),
+            glm::vec2(-1.0f, 0.0f),
     };
 
     GLfloat max = 0.0f;
     GLuint best_match = -1;
 
     for (GLuint i = 0; i < 4; ++i) {
-
-        vec2 norm_target;
-        vec2_norm(norm_target, target);
-
-        GLfloat dot_product = vec2_mul_inner(norm_target, compass[i]);
+        GLfloat dot_product = glm::dot(glm::normalize(target), compass[i]);
         if (dot_product > max) {
             max = dot_product;
             best_match = i;
@@ -258,35 +251,23 @@ Direction vector_direction(vec2 target)
     return (Direction)best_match;
 }
 
-
 Collision check_collision(const ball_object& lhs, const game_object& rhs)
 {
-    vec2 center{lhs.m_position[0] + lhs.m_radius, lhs.m_position[1] + lhs.m_radius};
+    glm::vec2 center(lhs.m_position + lhs.m_radius);
 
-    vec2 aabb_half_extension{rhs.m_size[0] / 2, rhs.m_size[1] / 2};
+    glm::vec2 aabb_half_extension(rhs.m_size.x / 2, rhs.m_size.y / 2);
+    glm::vec2 aabb_center(rhs.m_position.x + aabb_half_extension.x, rhs.m_position.y + aabb_half_extension.y);
 
-    vec2 aabb_center;
-    vec2_add(aabb_center, rhs.m_position, aabb_half_extension);
+    glm::vec2 difference = center - aabb_center;
+    glm::vec2 clamped = glm::clamp(difference, -aabb_half_extension, aabb_half_extension);
 
-    vec2 difference;
-    vec2_sub(difference, center, aabb_center);
+    glm::vec2 closest = aabb_center + clamped;
+    difference = closest - center;
 
-    vec2 max_vec{max(difference[0], -aabb_half_extension[0]), max(difference[1], -aabb_half_extension[1])};
-
-    vec2 clamped;
-    vec2_min(clamped, max_vec, aabb_half_extension);
-
-    vec2 closest;
-    vec2_add(closest, aabb_center, clamped);
-
-    vec2_sub(difference, closest, center);
-
-    std::array<float,2> array = {difference[0], difference[1]};
-
-    if (vec2_len(difference) < lhs.m_radius)
-        return std::make_tuple(GL_TRUE, vector_direction(difference), array);
+    if (glm::length(difference) < lhs.m_radius)
+        return std::make_tuple(GL_TRUE, vector_direction(difference), difference);
     else
-        return std::make_tuple(GL_FALSE, UP, std::array<float,2>{0.0f, 0.0f});
+        return std::make_tuple(GL_FALSE, UP, glm::vec2(0,0));
 }
 
 void game::do_collision()
@@ -294,55 +275,52 @@ void game::do_collision()
     for (game_object& box : m_levels[m_current_level].m_briks) {
         if (!box.m_destroyed) {
             Collision collision = check_collision(*m_ball, box);
-
-            if(std::get<0>(collision)) {
-                if (!box.m_solid){
+            if(std::get<0>(collision)){
+                if (!box.m_solid) {
                     box.m_destroyed = true;
-//               } else{
+                }
+                else {
                     m_shake_time = 0.1;
                     m_post_processor->m_shake = GL_TRUE;
                 }
 
                 Direction dir = std::get<1>(collision);
-                std::array<float,2> diff_vector = std::get<2>(collision);
+                glm::vec2 diff_vector = std::get<2>(collision);
 
                 if (dir == LEFT || dir == RIGHT) {
-                    m_ball->m_velocity[0] = -m_ball->m_velocity[0];
+                    m_ball->m_velocity.x = -m_ball->m_velocity.x;
 
-                    GLfloat penetration = m_ball->m_radius - std::abs(diff_vector[0]);
+                    GLfloat penetration = m_ball->m_radius - std::abs(diff_vector.x);
                     if (dir == LEFT)
-                        m_ball->m_position[0] += penetration;
+                        m_ball->m_position.x += penetration;
                     else if (dir == RIGHT)
-                        m_ball->m_position[0] -= penetration;
+                        m_ball->m_position.x -= penetration;
                 }
-                else if (dir == UP || dir == DOWN){
-                    m_ball->m_velocity[1] = -m_ball->m_velocity[1];
+                else if (dir == UP || dir == DOWN) {
+                    m_ball->m_velocity.y = -m_ball->m_velocity.y;
 
-                    GLfloat penetration = m_ball->m_radius - std::abs(diff_vector[1]);
+                    GLfloat penetration = m_ball->m_radius - std::abs(diff_vector.y);
                     if (dir == UP)
-                        m_ball->m_position[1] -= penetration;
+                        m_ball->m_position.y -= penetration;
                     else if (dir == DOWN)
-                        m_ball->m_position[1] += penetration;
+                        m_ball->m_position.y += penetration;
                 }
+
             }
         }
     }
 
     Collision result = check_collision(*m_ball, *m_player);
     if (!m_ball->m_stuck && std::get<0>(result)) {
-        GLfloat center_board = m_player->m_position[0] + m_player->m_size[0]/2;
-        GLfloat distance = (m_ball->m_position[0] + m_ball->m_radius) - center_board;
-        GLfloat percentage = distance / (m_player->m_size[0]/2);
+        GLfloat center_board = m_player->m_position.x + m_player->m_size.x/2;
+        GLfloat distance = (m_ball->m_position.x + m_ball->m_radius) - center_board;
+        GLfloat percentage = distance / (m_player->m_size.x/2);
 
         GLfloat strenght = 2.0f;
-        vec2 old_velosity;
-        std::copy(m_ball->m_velocity, m_ball->m_velocity+2, old_velosity);
-        m_ball->m_velocity[0] = INITIAL_BALL_VELOCITY[0] * percentage * strenght;
-
-        vec2 norm_velocity;
-        vec2_norm(norm_velocity, m_ball->m_velocity);
-        vec2_scale(m_ball->m_velocity, norm_velocity, vec2_len(old_velosity));
-        m_ball->m_velocity[1] = -1 * std::abs(m_ball->m_velocity[1]);
+        glm::vec2 old_velosity = m_ball->m_velocity;
+        m_ball->m_velocity.x = INITIAL_BALL_VELOCITY.x * percentage * strenght;
+        m_ball->m_velocity = glm::normalize(m_ball->m_velocity) * glm::length(old_velosity);
+        m_ball->m_velocity.y = -1 * std::abs(m_ball->m_velocity.y);
     }
 }
 
@@ -353,13 +331,9 @@ void game::reset_level()
 
 void game::reset_player()
 {
-    std::copy(m_player_size, m_player_size+2, m_player->m_size);
-
-    m_player->m_position[0] = m_width/2 - m_player->m_size[0]/2;
-    m_player->m_position[1] = m_height - m_player->m_size[1];
-
-    vec2 ball_velocity{INITIAL_BALL_VELOCITY[0], INITIAL_BALL_VELOCITY[1]};
-    m_ball->reset(vec2{m_player->m_position[0] + m_player->m_size[0]/2 - m_ball->m_radius/2, m_player->m_position[1] - m_ball_radius * 2}, ball_velocity);
+    m_player->m_size = m_player_size;
+    m_player->m_position = glm::vec2(m_width/2 - m_player->m_size.x/2, m_height - m_player->m_size.y);
+    m_ball->reset(m_player->m_position + glm::vec2(m_player->m_size.x/2 - m_ball->m_radius/2, -m_ball_radius * 2), INITIAL_BALL_VELOCITY);
 }
 
 void game::on_touch_press(float x, float y, int idx)

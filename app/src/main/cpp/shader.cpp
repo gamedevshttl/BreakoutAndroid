@@ -7,10 +7,7 @@
 #include <iostream>
 #include <android/log.h>
 
-//shader::shader()
-//{
-//
-//}
+#include <glm/gtc/type_ptr.hpp>
 
 shader& shader::use()
 {
@@ -18,12 +15,11 @@ shader& shader::use()
     return *this;
 }
 
-void shader::set_matrix4f(const GLchar* name, const mat4x4& matrix, GLboolean use_shader)
+void shader::set_matrix4f(const GLchar *name, const glm::mat4& matrix, GLboolean use_shader)
 {
-    if(use_shader)
+    if (use_shader)
         use();
-
-    glUniformMatrix4fv(glGetUniformLocation(m_id, name), 1, GL_FALSE, (GLfloat*)matrix);
+    glUniformMatrix4fv(glGetUniformLocation(m_id, name), 1, GL_FALSE, glm::value_ptr(matrix));
 }
 
 void shader::set_float(const GLchar* name, GLfloat value, GLboolean use_shader)
@@ -33,37 +29,39 @@ void shader::set_float(const GLchar* name, GLfloat value, GLboolean use_shader)
     glUniform1f(glGetUniformLocation(m_id, name), value);
 }
 
-
-void shader::set_int(const GLchar* name, GLuint value, GLboolean use_shader)
+void shader::set_int(const GLchar* name, GLint value, GLboolean use_shader)
 {
-    if(use_shader)
+    if (use_shader)
         use();
-
     glUniform1f(glGetUniformLocation(m_id, name), value);
 }
 
-void shader::set_vector3f(const GLchar* name, const vec3& value, GLboolean use_shader)
+void shader::set_vector_2f(const GLchar* name, const glm::vec2& value, GLboolean use_shader)
 {
-    if(use_shader)
+    if (use_shader)
         use();
-
-    glUniform3f(glGetUniformLocation(m_id, name), value[0], value[1], value[2]);
+    glUniform2f(glGetUniformLocation(m_id, name), value.x, value.y);
 }
 
-void shader::set_vector2f(const GLchar* name, const vec2& value, GLboolean use_shader)
+void shader::set_vector_3f(const GLchar* name, GLfloat x, GLfloat y, GLfloat z, GLboolean use_shader)
 {
-    if(use_shader)
+    if (use_shader)
         use();
-
-    glUniform2f(glGetUniformLocation(m_id, name), value[0], value[1]);
+    glUniform3f(glGetUniformLocation(m_id, name), x, y, z);
 }
 
-void shader::set_vector4f(const GLchar* name, const vec4& value, GLboolean use_shader)
+void shader::set_vector_3f(const GLchar* name, const glm::vec3& value, GLboolean use_shader)
 {
-    if(use_shader)
+    if (use_shader)
         use();
+    glUniform3f(glGetUniformLocation(m_id, name), value.x, value.y, value.z);
+}
 
-    glUniform4f(glGetUniformLocation(m_id, name), value[0], value[1], value[2], value[3]);
+void shader::set_vector_4f(const GLchar* name, const glm::vec4& value, GLboolean use_shader)
+{
+    if (use_shader)
+        use();
+    glUniform4f(glGetUniformLocation(m_id, name), value.x, value.y, value.z, value.w);
 }
 
 void shader::compile(const GLchar* vertex_source,  const GLchar* fragment_source, const GLchar* geometry_source)

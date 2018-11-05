@@ -13,7 +13,7 @@ particle_generator::particle_generator(shader _shader, texture _texture, GLuint 
 	init();
 }
 
-void particle_generator::update(GLfloat dt, const game_object &object, GLuint new_particle, vec2 offset)
+void particle_generator::update(GLfloat dt, const game_object &object, GLuint new_particle, glm::vec2 offset)
 {
     if (dt < 0)
         return;
@@ -46,8 +46,8 @@ void particle_generator::draw(sprite_renderer& renderer)
 		if (item.m_life > 0.0f) {
 
             m_shader.use();
-			m_shader.set_vector2f("offset", item.m_position);
-			m_shader.set_vector4f("color", item.m_color);
+			m_shader.set_vector_2f("offset", item.m_position);
+			m_shader.set_vector_4f("color", item.m_color);
 
 			glActiveTexture(GL_TEXTURE0);
 			m_texture.bind();
@@ -108,19 +108,13 @@ GLuint particle_generator::first_unsed_particle()
 	return 0;
 }
 
-void particle_generator::respawn_particle(particle &particle_item, const game_object &object, vec2 offset)
+void particle_generator::respawn_particle(particle &particle_item, const game_object &object, glm::vec2 offset)
 {
 	GLfloat random = ((rand() % 100) - 50) / 10.0f;
 	GLfloat color = 0.5 + ((rand() % 100) / 100.0f);
 
-	for(int i = 0; i<2; ++i) {
-		particle_item.m_position[i] = object.m_position[i] + random + offset[i];
-		particle_item.m_velosity[i] = object.m_velocity[i] * 0.1f;
-	}
-
-	for(int i = 0; i<3; ++i)
-		particle_item.m_color[i] = color;
-	particle_item.m_color[3] = 1.0f;
-
-	particle_item.m_life = 2.0f;
+    particle_item.m_position = object.m_position + random + offset;
+    particle_item.m_color = glm::vec4(color, color, color, 1.0f);
+    particle_item.m_life = 0.5f;
+    particle_item.m_velosity = object.m_velocity * 0.1f;
 }

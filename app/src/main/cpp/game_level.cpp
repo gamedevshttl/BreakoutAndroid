@@ -7,6 +7,9 @@
 
 #include <iostream>
 
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
 game_level::game_level()
 {}
 
@@ -59,32 +62,24 @@ void game_level::init(const std::vector<std::vector<GLuint>>& tile_data, GLuint 
 
 	for (GLuint y = 0; y < height; ++y) {
 		for (GLuint x = 0; x < width; ++x) {
-			vec2 pos{unit_width * x, unit_height * y};
-			vec2 size{unit_width, unit_height};
+			glm::vec2 pos(unit_width * x, unit_height * y);
+			glm::vec2 size(unit_width, unit_height);
 
 			if (tile_data[y][x] == 1) {
-				game_object obj(pos, size, resource_manager::get_texture("block_solid"), vec3{0.8f, 0.8f, 0.7f});
+				game_object obj(pos, size, resource_manager::get_texture("block_solid"), glm::vec3(0.8f, 0.8f, 0.7f));
 				obj.m_solid = true;
 				m_briks.push_back(obj);
 			}
 			else if(tile_data[y][x] > 1){
-				vec3 color{1.0f, 1.0f, 1.0f};
-				if (tile_data[y][x] == 2){
-                    vec3 color2{0.2f, 0.6f, 1.0f};
-                    std::copy(color2, color2+3, color);
-                }
-				else if (tile_data[y][x] == 3) {
-                    vec3 color3{0.0f, 0.7f, 0.0f};
-                    std::copy(color3, color3+3, color);
-                }
-				else if (tile_data[y][x] == 4) {
-                    vec3 color4{0.8f, 0.8f, 0.4f};
-                    std::copy(color4, color4 + 3, color);
-                }
-				else if (tile_data[y][x] == 5) {
-                    vec3 color5{1.0f, 0.5f, 0.0f};
-                    std::copy(color5, color5+3, color);
-                }
+				glm::vec3 color(1.0f);
+				if (tile_data[y][x] == 2)
+					color = glm::vec3(0.2f, 0.6f, 1.0f);
+				else if (tile_data[y][x] == 3)
+					color = glm::vec3(0.0f, 0.7f, 0.0f);
+				else if (tile_data[y][x] == 4)
+					color = glm::vec3(0.8f, 0.8f, 0.4f);
+				else if (tile_data[y][x] == 5)
+					color = glm::vec3(1.0f, 0.5f, 0.0f);
 
 				m_briks.push_back(game_object(pos, size, resource_manager::get_texture("block"), color));
 			}

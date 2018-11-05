@@ -2,7 +2,6 @@
 #define BALL_OBJECT_H
 
 #include "game_object.h"
-#include "linmath.h"
 
 class ball_object:public game_object
 {
@@ -11,10 +10,11 @@ public:
 	GLboolean m_stuck;
 
 	ball_object();
-	ball_object(vec2 pos, GLfloat radius, vec2 velocity, texture sprite);
+	ball_object(glm::vec2 pos, GLfloat radius, glm::vec2 velocity, texture sprite);
 
-	void move(GLfloat dt, GLuint window_width);
-	void reset(vec2 position, vec2 velocity);
+	glm::vec2 move(GLfloat dt, GLuint window_width);
+	void reset(glm::vec2 position, glm::vec2 velocity);
 };
+
 
 #endif

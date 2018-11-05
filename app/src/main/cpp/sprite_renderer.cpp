@@ -3,31 +3,26 @@
 //
 
 #include "sprite_renderer.h"
-#include "linmath.h"
 #include <android/log.h>
-
-//sprite_renderer::sprite_renderer(shader& shader_item)
-//{
-//    m_shader_item = shader_item;
-//    init_render_data();
-//}
 
 sprite_renderer::sprite_renderer(shader _shader) {
     m_shader_item = _shader;
     init_render_data();
 }
 
-void sprite_renderer::draw_sprite(texture& texture_item, vec2 position, vec2 size, const vec3& color)
+void sprite_renderer::draw_sprite(texture& texture_item, glm::vec2 position, glm::vec2 size, glm::vec3 color)
 {
-    mat4x4 model;
-    mat4x4_identity(model);
-    mat4x4_translate_in_place(model, position[0], position[1], 0);
+    glm::mat4 model;
+    model = glm::translate(model, glm::vec3(position, 0.0f));
 
-    mat4x4_scale_aniso(model, model, size[0], size[1], 1);
+    model = glm::translate(model, glm::vec3(0.5f * size.x, 0.5f * size.y, 0.0f));
+    model = glm::translate(model, glm::vec3(-0.5f * size.x, -0.5f * size.y, 0.0f));
+
+    model = glm::scale(model, glm::vec3(size, 1.0f));
 
     m_shader_item.use();
     m_shader_item.set_matrix4f("model", model);
-    m_shader_item.set_vector3f("spriteColor", color);
+    m_shader_item.set_vector_3f("spriteColor", color);
 
     glActiveTexture(GL_TEXTURE0);
     texture_item.bind();
@@ -41,6 +36,7 @@ void sprite_renderer::draw_sprite(texture& texture_item, vec2 position, vec2 siz
     glBindBuffer(GL_ARRAY_BUFFER,0);
     glBindTexture(GL_TEXTURE_2D, 0);
 }
+
 
 void sprite_renderer::init_render_data()
 {

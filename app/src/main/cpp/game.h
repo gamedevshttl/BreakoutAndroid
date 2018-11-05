@@ -11,6 +11,9 @@
 #include <tuple>
 #include <array>
 
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
 #include "resource_manager.h"
 #include "sprite_renderer.h"
 #include "game_level.h"
@@ -48,12 +51,12 @@ enum Direction {
     LEFT
 };
 
-typedef std::tuple<GLboolean, Direction, std::array<float,2>> Collision;
+typedef std::tuple<GLboolean, Direction, glm::vec2> Collision;
 
 // Initial velocity of the player paddle
 const GLfloat PLAYER_VELOCITY(500.0f);
 // Initial velocity of the Ball
-const std::array<float, 2> INITIAL_BALL_VELOCITY{100.0f, -350.0f};
+const glm::vec2 INITIAL_BALL_VELOCITY(100.0f, -350.0f);
 // Radius of the ball object
 const GLfloat BALL_RADIUS = 12.5f;
 
@@ -83,17 +86,17 @@ public:
     AAssetManager* m_asset_manager;
 
     int m_width, m_height;
-    mat4x4 projection;
+    glm::mat4x4 projection;
     std::vector<game_level> m_levels;
     GLuint m_current_level = 0;
 
     std::shared_ptr<game_object> m_player;
-    vec2 m_player_size;
+    glm::vec2 m_player_size;
     GLfloat m_player_velocity;
 
     std::shared_ptr<ball_object> m_ball;
     GLfloat m_ball_radius;
-    vec2 m_ball_velocity;
+    glm::vec2 m_ball_velocity;
 
     std::shared_ptr<particle_generator> m_particle_generator;
     std::shared_ptr<post_processor> m_post_processor;

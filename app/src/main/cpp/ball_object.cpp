@@ -6,37 +6,39 @@ ball_object::ball_object()
 	, m_stuck(true)
 {}
 
-ball_object::ball_object(vec2 pos, GLfloat radius, vec2 velocity, texture sprite)
-	: game_object(pos, vec2{radius* 2, radius * 2}, sprite, vec3{1.0f, 1.0f, 1.0f}, velocity)
-	, m_radius(radius)
-	, m_stuck(true)
+ball_object::ball_object(glm::vec2 pos, GLfloat radius, glm::vec2 velocity, texture sprite)
+		: game_object(pos, glm::vec2(radius * 2, radius * 2), sprite, glm::vec3(1.0f), velocity)
+		, m_radius(radius)
+		, m_stuck(true)
 {}
 
-void ball_object::move(GLfloat dt, GLuint window_width)
+glm::vec2 ball_object::move(GLfloat dt, GLuint window_width)
 {
 	if (!m_stuck) {
-		m_position[0] += m_velocity[0] * dt;
-		m_position[1] += m_velocity[1] * dt;
+		m_position += m_velocity * dt;
 
-		if (m_position[0] < 0.0f){
-			m_velocity[0] = -m_velocity[0];
-			m_position[0] = 0.0f;
+		if (m_position.x < 0.0f){
+			m_velocity.x = -m_velocity.x;
+			m_position.x = 0.0f;
 		}
-		else if (m_position[0] + m_size[0] >= window_width) {
-			m_velocity[0] = -m_velocity[0];
-			m_position[0] = window_width - m_size[0];
+		else if (m_position.x + m_size.x >= window_width) {
+			m_velocity.x = -m_velocity.x;
+			m_position.x = window_width - m_size.x;
 		}
-		else if (m_position[1] <= 0.0f) {
-			m_velocity[1] = -m_velocity[1];
-			m_position[1] = 0.0f;
+		else if (m_position.y <= 0.0f) {
+			m_velocity.y = -m_velocity.y;
+			m_position.y = 0.0f;
 		}
 	}
+
+	return m_position;
 }
 
-void ball_object::reset(vec2 position, vec2 velocity)
+void ball_object::reset(glm::vec2 position, glm::vec2 velocity)
 {
-	std::copy(position, position+2, m_position);
-	std::copy(velocity, velocity+2, m_velocity);
-
+	m_position = position;
+	m_velocity = velocity;
 	m_stuck = true;
 }
+
+
