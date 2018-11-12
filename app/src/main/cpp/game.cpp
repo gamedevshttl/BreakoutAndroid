@@ -71,7 +71,6 @@ void on_touch_release(float x, float y, int idx)
 
 game::game()
     : m_player_velocity(PLAYER_VELOCITY)
-    , m_action(none)
     , m_ball_radius(BALL_RADIUS)
     , m_shake_time(0)
     , m_ball_velocity(INITIAL_BALL_VELOCITY)
@@ -155,28 +154,9 @@ void game::update(GLfloat dt)
     do_collision();
     m_particle_generator->update(dt, *m_ball, 2, glm::vec2(m_ball->m_radius/2));
 
-    GLfloat velocity = m_player_velocity * dt;
-    if(m_action == left){
-        if (m_player->m_position[0] > 0) {
-            m_player->m_position[0] -= velocity;
-
-            if(m_ball->m_stuck)
-                m_ball->m_position[0] -= velocity;
-        }
-    }
-    else if(m_action == right){
-        if (m_player->m_position[0] < m_width - m_player->m_size[0]) {
-            m_player->m_position[0] += velocity;
-
-            if(m_ball->m_stuck)
-                m_ball->m_position[0] += velocity;
-        }
-    }
-
     if (m_ball->m_position[1] >= m_height) {
         reset_level();
         reset_player();
-        m_action = none;
     }
 
     if (m_shake_time > 0.0f) {
@@ -186,6 +166,54 @@ void game::update(GLfloat dt)
     }
 
     update_reward(dt);
+
+
+    if ((m_player->m_position.x + m_player->m_size.x / 2) != m_mouse_x) {
+        if (m_prev_mouse_x != m_mouse_x) {
+            m_diff_pos = m_mouse_x - (m_player->m_position.x + m_player->m_size.x / 2);
+            m_prev_mouse_x = m_mouse_x;
+            m_move_time = 0.05f;
+        }
+
+        if (m_move_time > 0) {
+            if (m_diff_pos > 0) {
+                if ((m_player->m_position.x + m_player->m_size.x / 2) < m_mouse_x) {
+                    GLfloat delta = (m_diff_pos * dt) / m_move_time;
+                    m_player->m_position.x += delta;
+
+                    if (m_ball->m_stuck)
+                        m_ball->m_position.x += delta;
+
+                    m_diff_pos -= delta;
+                    m_move_time -= dt;
+                }
+            }
+            else {
+                if ((m_player->m_position.x + m_player->m_size.x / 2) > m_mouse_x) {
+                    GLfloat delta = (m_diff_pos * dt) / m_move_time;
+                    m_player->m_position.x += delta;
+
+                    if (m_ball->m_stuck)
+                        m_ball->m_position.x += delta;
+
+
+                    m_diff_pos -= delta;
+                    m_move_time -= dt;
+                }
+            }
+
+            if (m_player->m_position.x <= 0) {
+                m_player->m_position.x = 1;
+                m_move_time = 0;
+            }
+
+            if (m_player->m_position.x >= m_width - m_player->m_size.x) {
+                m_player->m_position.x = m_width - m_player->m_size.x - 1;
+                m_move_time = 0;
+            }
+        }
+
+    }
 }
 
 void game::render()
@@ -219,22 +247,6 @@ void game::render()
     std::chrono::seconds diff_s = s - h;
 
     m_post_processor->render(diff_s.count());
-}
-
-float max(float x, float y)
-{
-    if(x > y)
-        return x;
-    else
-        return y;
-}
-
-float min(float x, float y)
-{
-    if(x < y)
-        return x;
-    else
-        return y;
 }
 
 Direction vector_direction(glm::vec2 target)
@@ -474,29 +486,25 @@ void game::on_touch_press(float x, float y, int idx)
     if (idx > 0)
         return;
 
-    if (m_ball->m_stuck){
+    if (y < (m_height / 3.0) * 2.0 && m_ball->m_stuck){
         m_ball->m_stuck = false;
         return;
     }
 
-
-    if(x > 0.5)
-        m_action = right;
-    else
-        m_action = left;
+    m_mouse_x = x;
+    m_mouse_y = y;
 }
 
 void game::on_touch_drag(float x, float y, int idx)
 {
     if (idx > 0)
         return;
+
+    m_mouse_x = x;
+    m_mouse_y = y;
 }
 
 void game::on_touch_release(float x, float y, int idx)
 {
-    if (idx > 0)
-        return;
-
-//    m_action = none;
 }
 

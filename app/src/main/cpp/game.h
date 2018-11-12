@@ -39,12 +39,6 @@ enum game_state {
     game_win
 };
 
-enum type_action{
-    none,
-    left,
-    right,
-};
-
 enum Direction {
     UP,
     RIGHT,
@@ -83,8 +77,6 @@ public:
     void on_touch_drag(float x, float y, int idx);
     void on_touch_release(float x, float y, int idx);
 
-    type_action m_action;
-
     std::shared_ptr<sprite_renderer> m_sprite_renderer;
     std::string m_current_dir;
     AAssetManager* m_asset_manager;
@@ -107,6 +99,11 @@ public:
     GLfloat m_shake_time;
 
     std::vector<reward> m_rewards;
+
+private:
+    GLfloat m_mouse_x, m_prev_mouse_x, m_mouse_y;
+    GLfloat m_diff_pos;
+    GLfloat m_move_time;
 };
 
 

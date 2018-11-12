@@ -57,9 +57,8 @@ public class Breakout extends AppCompatActivity {
                 public boolean onTouch(View v, MotionEvent event) {
                     if(event != null) {
 
-                        final float normalizedX = (event.getX() / (float) v.getWidth()) * 2 - 1;
-                        final float normalizedY = -((event.getY() / (float) v.getHeight()) * 2 - 1);
-
+                        final float x = event.getX();
+                        final float y = event.getY();
                         final int idx = event.getActionIndex();
 
                         if(event.getAction() == MotionEvent.ACTION_DOWN){
@@ -67,7 +66,7 @@ public class Breakout extends AppCompatActivity {
                             glSurfaceView.queueEvent(new Runnable() {
                                 @Override
                                 public void run() {
-                                    on_touch_press(normalizedX, normalizedY, idx);
+                                    on_touch_press(x, y, idx);
                                 }
                             });
                         }
@@ -75,7 +74,7 @@ public class Breakout extends AppCompatActivity {
                             glSurfaceView.queueEvent(new Runnable() {
                                 @Override
                                 public void run() {
-                                    on_touch_press(normalizedX, normalizedY, idx);
+                                    on_touch_press(x, y, idx);
                                 }
                             });
                         }
@@ -83,7 +82,7 @@ public class Breakout extends AppCompatActivity {
                             glSurfaceView.queueEvent(new Runnable() {
                                 @Override
                                 public void run() {
-                                    on_touch_drag(normalizedX, normalizedY, idx);
+                                    on_touch_drag(x, y, idx);
                                 }
                             });
                         }
@@ -91,7 +90,7 @@ public class Breakout extends AppCompatActivity {
                             glSurfaceView.queueEvent(new Runnable() {
                                 @Override
                                 public void run() {
-                                    on_touch_release(normalizedX, normalizedY, idx);
+                                    on_touch_release(x, y, idx);
                                 }
                             });
                         }
