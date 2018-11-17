@@ -100,6 +100,10 @@ public:
 
     std::vector<reward> m_rewards;
 
+    GLuint m_game_screen_top;
+    GLuint m_game_screen_low;
+    GLint m_game_screen_height_diff;
+
 private:
     GLfloat m_mouse_x, m_prev_mouse_x, m_mouse_y;
     GLfloat m_diff_pos;

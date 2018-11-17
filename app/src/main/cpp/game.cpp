@@ -122,6 +122,10 @@ void game::on_surface_changed(int width, int height)
 
     m_width = width, m_height = height;
 
+    m_game_screen_top = m_height - m_height * 0.9;
+    m_game_screen_low = m_height - m_height * 0.8;
+    m_game_screen_height_diff = m_game_screen_low - m_game_screen_top;
+
     projection = glm::ortho(0.0f, static_cast<GLfloat>(m_width), static_cast<GLfloat>(m_height), 0.0f, -1.0f, 1.0f);
 
     resource_manager::get_shader("sprite").use().set_matrix4f("projection", projection);
@@ -131,12 +135,12 @@ void game::on_surface_changed(int width, int height)
     reward_manager::init();
 
     game_level one;
-    one.load("data/level_one.json", m_width, m_height * 0.3);
+    one.load("data/level_one.json", m_width, m_height * 0.3, m_game_screen_top);
     m_levels.push_back(one);
 
     m_player_size = glm::vec2(width / 8, height / 30);
 
-    glm::vec2 player_pos = glm::vec2(m_width/2 - m_player_size.x/2, m_height - m_player_size.y);
+    glm::vec2 player_pos = glm::vec2(m_width/2 - m_player_size.x/2, m_height - m_player_size.y - m_game_screen_low);
     m_player = std::make_shared<game_object>(player_pos, m_player_size, resource_manager::get_texture("paddle"));
 
     glm::vec2 ball_pos = player_pos + glm::vec2(m_player_size.x / 2 - m_ball_radius / 2, -m_ball_radius * 2);
@@ -241,12 +245,16 @@ void game::render()
 
     std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
     std::chrono::system_clock::duration tp = now.time_since_epoch();
+    std::chrono::microseconds mcs = std::chrono::duration_cast<std::chrono::microseconds>(tp);
     std::chrono::seconds s = std::chrono::duration_cast<std::chrono::seconds>(tp);
     std::chrono::hours h = std::chrono::duration_cast<std::chrono::hours>(tp);
 
     std::chrono::seconds diff_s = s - h;
+    std::chrono::microseconds diff_mcs = mcs - s;
+    GLfloat diff_mcs_count = diff_mcs.count();
+    GLfloat time = diff_s.count() + diff_mcs_count/1000000.0f;
 
-    m_post_processor->render(diff_s.count());
+    m_post_processor->render(time);
 }
 
 Direction vector_direction(glm::vec2 target)
@@ -380,8 +388,12 @@ void game::reset_level()
 void game::reset_player()
 {
     m_player->m_size = m_player_size;
-    m_player->m_position = glm::vec2(m_width/2 - m_player->m_size.x/2, m_height - m_player->m_size.y);
+    m_player->m_position = glm::vec2(m_width/2 - m_player->m_size.x/2, m_height - m_player->m_size.y - m_game_screen_low);
     m_ball->reset(m_player->m_position + glm::vec2(m_player->m_size.x/2 - m_ball->m_radius/2, -m_ball_radius * 2), INITIAL_BALL_VELOCITY);
+
+    if (m_post_processor->m_confise)
+        m_levels[m_current_level].move(-m_game_screen_height_diff);
+
     m_ball->m_color = glm::vec3(1.0f);
     m_player->m_color = glm::vec3(1.0f);
     m_post_processor->m_chaos = GL_FALSE;
@@ -438,6 +450,10 @@ void game::update_reward(GLfloat dt)
                 else if(reward_item.m_type == "confuse") {
                     if (!is_other_reward_active(m_rewards, "confuse")) {
                         m_post_processor->m_confise = GL_FALSE;
+
+                        m_levels[m_current_level].move(-m_game_screen_height_diff);
+                        m_player->m_position.y -= m_game_screen_height_diff;
+                        m_ball->m_position.y -=m_game_screen_height_diff;
                     }
                 }
                 else if(reward_item.m_type == "chaos") {
@@ -472,8 +488,16 @@ void game::activate_reward(const reward& reward_item)
         m_player->m_size.x += 50;
     }
     else if (reward_item.m_type == "confuse") {
-        if (!m_post_processor->m_chaos)
+        if (!m_post_processor->m_chaos) {
+
+            if (!m_post_processor->m_confise) {
+                m_levels[m_current_level].move(m_game_screen_height_diff);
+                m_player->m_position.y += m_game_screen_height_diff;
+                m_ball->m_position.y += m_game_screen_height_diff;
+            }
+
             m_post_processor->m_confise = GL_TRUE;
+        }
     }
     else if (reward_item.m_type == "chaos") {
         if (!m_post_processor->m_confise)
