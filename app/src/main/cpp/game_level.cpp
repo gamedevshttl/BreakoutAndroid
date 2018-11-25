@@ -99,6 +99,10 @@ void game_level::init(const std::vector<std::vector<GLuint>>& tile_data, GLuint 
 	GLfloat unit_width = level_width / static_cast<GLfloat>(width);
 	GLfloat unit_height = level_height / static_cast<GLfloat>(height);
 
+    texture block = resource_manager::get_texture("white_break_gradient_box");
+    GLfloat scale = unit_width / block.m_width;
+    unit_height = block.m_height * scale;
+
     GLuint index = 0;
 	for (GLuint y = 0; y < height; ++y) {
 		for (GLuint x = 0; x < width; ++x) {
@@ -106,7 +110,7 @@ void game_level::init(const std::vector<std::vector<GLuint>>& tile_data, GLuint 
 			glm::vec2 size(unit_width, unit_height);
 
 			if (tile_data[y][x] == 1) {
-                brick_object brick(pos, size, resource_manager::get_texture("block_solid"), glm::vec3(0.8f, 0.8f, 0.7f));
+                brick_object brick(pos, size, resource_manager::get_texture("armor_break"), glm::vec3(0.8f, 0.8f, 0.7f));
                 brick.m_solid = true;
                 brick.m_index = index;
 				m_briks.push_back(brick);
@@ -122,7 +126,7 @@ void game_level::init(const std::vector<std::vector<GLuint>>& tile_data, GLuint 
 				else if (tile_data[y][x] == 5)
 					color = glm::vec3(1.0f, 0.5f, 0.0f);
 
-                brick_object brick(pos, size, resource_manager::get_texture("block"), color);
+                brick_object brick(pos, size, resource_manager::get_texture("white_break_gradient_box"), color);
                 brick.m_index = index;
                 m_briks.push_back(brick);
 			}

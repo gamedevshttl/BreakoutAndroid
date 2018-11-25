@@ -3,10 +3,11 @@
 
 #include <cstdlib>
 
-particle_generator::particle_generator(shader _shader, texture _texture, GLuint amount)
+particle_generator::particle_generator(shader _shader, texture _texture, GLuint amount, GLfloat scale)
 
 	: m_amount(amount)
 	, m_last_used_particle(0)
+    , m_scale(scale)
 {
     m_shader = _shader;
     m_texture = _texture;
@@ -26,6 +27,7 @@ void particle_generator::update(GLfloat dt, const game_object &object, GLuint ne
         if(unused_particle<m_particles.size())
 			respawn_particle(m_particles[unused_particle], object, offset);
 	}
+
 
 	for (auto &item : m_particles) {
 		item.m_life -= dt;
@@ -48,6 +50,7 @@ void particle_generator::draw(sprite_renderer& renderer)
             m_shader.use();
 			m_shader.set_vector_2f("offset", item.m_position);
 			m_shader.set_vector_4f("color", item.m_color);
+			m_shader.set_float("scale", m_scale);
 
 			glActiveTexture(GL_TEXTURE0);
 			m_texture.bind();
@@ -110,7 +113,7 @@ GLuint particle_generator::first_unsed_particle()
 
 void particle_generator::respawn_particle(particle &particle_item, const game_object &object, glm::vec2 offset)
 {
-	GLfloat random = ((rand() % 100) - 50) / 10.0f;
+	GLfloat random = ((rand() % 100) - 50) / offset.x * 4;
 	GLfloat color = 0.5 + ((rand() % 100) / 100.0f);
 
     particle_item.m_position = object.m_position + random + offset;

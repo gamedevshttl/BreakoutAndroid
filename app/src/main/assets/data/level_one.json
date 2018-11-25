@@ -10,6 +10,7 @@
 	"reward":[
 		{"speed":[74, 59, 54]},
 		{"sticky":[70, 69, 67]},
-		{"pass-through":[50, 57, 40]}
+		{"pass-through":[50, 57, 40]},
+		{"confuse":[73, 72, 71]}
 	]	
 }

@@ -7,10 +7,10 @@ varying vec4 ParticleColor;
 uniform mat4 projection;
 uniform vec2 offset;
 uniform vec4 color;
+uniform float scale;
 
 void main()
 {
-	float scale = 10.0f;
 	TexCoord = vertex.zw;
 	ParticleColor = color;
 

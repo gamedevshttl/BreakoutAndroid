@@ -23,7 +23,7 @@ struct particle {
 class particle_generator
 {
 public:
-	particle_generator(shader _shader, texture _texture, GLuint amount);
+	particle_generator(shader _shader, texture _texture, GLuint amount, GLfloat scale);
 	void update(GLfloat dt, const game_object &object, GLuint new_particle, glm::vec2 offset = glm::vec2(0.0f, 0.0f));
 	void draw(sprite_renderer& renderer);
 private:
@@ -39,5 +39,6 @@ private:
 	GLuint m_vertex_handle;
 
 	GLuint m_last_used_particle;
+	GLfloat m_scale;
 };
 #endif

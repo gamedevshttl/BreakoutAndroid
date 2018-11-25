@@ -71,7 +71,6 @@ void on_touch_release(float x, float y, int idx)
 
 game::game()
     : m_player_velocity(PLAYER_VELOCITY)
-    , m_ball_radius(BALL_RADIUS)
     , m_shake_time(0)
     , m_ball_velocity(INITIAL_BALL_VELOCITY)
 {
@@ -88,6 +87,13 @@ void game::init()
     resource_manager::load_texture("textures/block_solid.png", GL_TRUE, "block_solid");
     resource_manager::load_texture("textures/paddle.png", GL_TRUE, "paddle");
     resource_manager::load_texture("textures/particle.png", GL_TRUE, "particle");
+    resource_manager::load_texture("textures/ball_icon.png", GL_TRUE, "ball_icon");
+    resource_manager::load_texture("textures/white_break.png", GL_TRUE, "white_break");
+    resource_manager::load_texture("textures/white_break_box.png", GL_TRUE, "white_break_box");
+    resource_manager::load_texture("textures/white_break_gradient_box.png", GL_TRUE, "white_break_gradient_box");
+    resource_manager::load_texture("textures/stone_break_2.png", GL_TRUE, "stone_break");
+    resource_manager::load_texture("textures/armor_break_1.png", GL_TRUE, "armor_break");
+    resource_manager::load_texture("textures/bg.png", GL_TRUE, "bg");
 
     resource_manager::load_shader("shaders/particle.vs", "shaders/particle.fs", "particle");
     resource_manager::load_shader("shaders/sprite.vs", "shaders/sprite.fs", "sprite");
@@ -97,10 +103,6 @@ void game::init()
 
     resource_manager::get_shader("sprite").use().set_int("image", 0);
     resource_manager::get_shader("particle").use().set_int("image", 0);
-
-    m_particle_generator = std::make_shared<particle_generator>(resource_manager::get_shader("particle"),
-                                                                resource_manager::get_texture("particle"),
-                                                                500);
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -138,13 +140,19 @@ void game::on_surface_changed(int width, int height)
     one.load("data/level_one.json", m_width, m_height * 0.3, m_game_screen_top);
     m_levels.push_back(one);
 
-    m_player_size = glm::vec2(width / 8, height / 30);
+    m_player_size = glm::vec2(width / 6, height / 27);
+    m_ball_radius = width/40.0f;
+
+    m_particle_generator = std::make_shared<particle_generator>(resource_manager::get_shader("particle"),
+                                                                resource_manager::get_texture("particle"),
+                                                                500,
+                                                                width/50.0f);
 
     glm::vec2 player_pos = glm::vec2(m_width/2 - m_player_size.x/2, m_height - m_player_size.y - m_game_screen_low);
     m_player = std::make_shared<game_object>(player_pos, m_player_size, resource_manager::get_texture("paddle"));
 
     glm::vec2 ball_pos = player_pos + glm::vec2(m_player_size.x / 2 - m_ball_radius / 2, -m_ball_radius * 2);
-    m_ball = std::make_shared<ball_object>(ball_pos, m_ball_radius, m_ball_velocity, resource_manager::get_texture("fase"));
+    m_ball = std::make_shared<ball_object>(ball_pos, m_ball_radius, m_ball_velocity, resource_manager::get_texture("ball_icon"));
 
     m_post_processor = std::make_shared<post_processor>(resource_manager::get_shader("postprocessing"), m_width, m_height);
 }
@@ -235,6 +243,8 @@ void game::render()
     m_post_processor->begin_render();
 
     {
+        m_sprite_renderer->draw_sprite(resource_manager::get_texture("bg"), glm::vec2(0, 0), glm::vec2(m_width, m_height));
+
         if (m_levels.size() > m_current_level)
             m_levels[m_current_level].draw(*m_sprite_renderer);
 
@@ -407,6 +417,10 @@ void game::reset_player()
     m_post_processor->m_chaos = GL_FALSE;
     m_post_processor->m_confise = GL_FALSE;
     m_ball->m_pass_through = GL_FALSE;
+
+    for (auto& reward_item : m_rewards) {
+        reward_item.m_activated = GL_FALSE;
+    }
 }
 
 void game::spawn_rewards(const glm::vec2& position, GLuint index)
