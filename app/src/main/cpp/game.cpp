@@ -16,6 +16,7 @@
 #include "game_level.h"
 #include "particle_generator.h"
 #include "post_processor.h"
+#include "text_renderer.h"
 
 
 
@@ -155,6 +156,9 @@ void game::on_surface_changed(int width, int height)
     m_ball = std::make_shared<ball_object>(ball_pos, m_ball_radius, m_ball_velocity, resource_manager::get_texture("ball_icon"));
 
     m_post_processor = std::make_shared<post_processor>(resource_manager::get_shader("postprocessing"), m_width, m_height);
+
+    m_text = std::make_shared<text_renderer>(m_width, m_height);
+    m_text->load("font/OCRAEXT.TTF", 70);
 }
 
 void game::update(GLfloat dt)
@@ -273,6 +277,9 @@ void game::render()
     GLfloat time = diff_s.count() + diff_mcs_count/1000000.0f;
 
     m_post_processor->render(time);
+
+    if(m_text)
+        m_text->render_text("Lives:3", 5.0f, 5.0f, 1.0f);
 }
 
 Direction vector_direction(glm::vec2 target)

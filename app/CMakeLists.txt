@@ -12,11 +12,14 @@ cmake_minimum_required(VERSION 3.4.1)
 
 include_directories(libs/libpng/jni
                     libs/glm-0.9.8.5
-                    libs/rapidjson/include)
+                    libs/rapidjson/include
+                    libs/freetype-2.9/include
+                    )
 
 add_subdirectory(libs/libpng)
 add_subdirectory(libs/glm-0.9.8.5)
 add_subdirectory(libs/rapidjson)
+add_subdirectory(libs/freetype-2.9)
 
 add_library( # Sets the name of the library.
              native-lib
@@ -48,6 +51,8 @@ add_library( # Sets the name of the library.
              src/main/cpp/post_processor.cpp
              src/main/cpp/reward.h
              src/main/cpp/reward.cpp
+             src/main/cpp/text_renderer.h
+             src/main/cpp/text_renderer.cpp
              )
 
 # Searches for a specified prebuilt library and stores the path as a
@@ -82,4 +87,5 @@ target_link_libraries( # Specifies the target library.
                        png
                        z
                        glm
+                       freetype
                        )

@@ -22,6 +22,7 @@
 
 class particle_generator;
 class post_processor;
+class text_renderer;
 
 void on_surface_created();
 void on_surface_changed(int width, int height);
@@ -104,6 +105,7 @@ public:
     GLuint m_game_screen_low;
     GLint m_game_screen_height_diff;
 
+    std::shared_ptr<text_renderer> m_text;
 private:
     GLfloat m_mouse_x, m_prev_mouse_x, m_mouse_y;
     GLfloat m_diff_pos;

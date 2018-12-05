@@ -47,6 +47,12 @@ typedef struct {
     const void* file_handle;
 } FileData;
 
+struct FileHandle{
+    unsigned char* m_buffer;
+    int32_t m_size;
+};
+
+
 static void read_png_data_callback(
         png_structp png_ptr, png_byte* png_data, png_size_t read_length);
 static PngInfo read_and_update_info(const png_structp png_ptr, const png_infop info_ptr);
@@ -73,6 +79,7 @@ public:
 
     static std::string load_file(const GLchar *file_path);
 
+    static FileHandle get_file_data(const GLchar *file_path);
 private:
     resource_manager(){}
 

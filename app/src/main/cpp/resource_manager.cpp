@@ -82,6 +82,18 @@ std::string resource_manager::load_file(const GLchar *file_path)
     return file_content;
 }
 
+FileHandle resource_manager::get_file_data(const GLchar *file_path)
+{
+    AAsset* assetFile = AAssetManager_open(m_asset_manager, file_path, AASSET_MODE_STREAMING);
+
+    FileHandle handle;
+    handle.m_size = AAsset_getLength(assetFile);
+    handle.m_buffer = new unsigned char[handle.m_size];
+    AAsset_read(assetFile, handle.m_buffer, (size_t) handle.m_size);
+    AAsset_close(assetFile);
+
+    return handle;
+}
 
 shader resource_manager::load_shader_from_file(const GLchar *v_shader_file,
                                                const GLchar *f_shader_file) {
